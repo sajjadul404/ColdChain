@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Search, Plus } from 'lucide-react';
+import { CheckCircle2, Search, Plus, AlertTriangle, Flame } from 'lucide-react';
 
 export const BatchManagementView = ({
   vaccines,
@@ -48,24 +48,42 @@ export const BatchManagementView = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredBatches.map((batch) => (
-          <div
-            key={batch.id}
-            className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between hover:border-indigo-300 transition-all"
-          >
-            <div>
-              <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
-                <div>
-                  <span className="text-xs font-mono font-bold text-indigo-600 px-2.5 py-0.5 bg-indigo-50 rounded-lg inline-block mb-1.5">
-                    {batch.batchNumber}
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900">{batch.name}</h3>
+        {filteredBatches.map((batch) => {
+          const isDiscard = batch.status === 'Discard' || batch.remainingMinutes <= 0;
+          const isAtRisk = batch.status === 'At Risk' || (batch.remainingPct < 20 && !isDiscard);
+
+          return (
+            <div
+              key={batch.id}
+              className={`bg-white rounded-3xl p-6 border shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between transition-all ${
+                isDiscard ? 'border-red-300 ring-1 ring-red-400/20' : isAtRisk ? 'border-amber-300' : 'border-slate-200/80 hover:border-indigo-300'
+              }`}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
+                  <div>
+                    <span className="text-xs font-mono font-bold text-indigo-600 px-2.5 py-0.5 bg-indigo-50 rounded-lg inline-block mb-1.5">
+                      {batch.batchNumber}
+                    </span>
+                    <h3 className="text-base font-bold text-slate-900">{batch.name}</h3>
+                  </div>
+                  {isDiscard ? (
+                    <span className="px-2.5 py-1 bg-red-50 text-red-700 text-xs font-bold rounded-lg flex items-center gap-1.5 border border-red-200 shrink-0 animate-pulse">
+                      <span className="w-2 h-2 rounded-full bg-red-600 shadow-[0_0_6px_rgba(239,68,68,1)]"></span>
+                      Discard (0m)
+                    </span>
+                  ) : isAtRisk ? (
+                    <span className="px-2.5 py-1 bg-amber-50 text-amber-800 text-xs font-semibold rounded-lg flex items-center gap-1 border border-amber-200 shrink-0">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                      At Risk (&lt;20%)
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-lg flex items-center gap-1 border border-emerald-200 shrink-0">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Safe
+                    </span>
+                  )}
                 </div>
-                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-lg flex items-center gap-1 border border-emerald-200 shrink-0">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Optimal
-                </span>
-              </div>
 
               <div className="py-4 space-y-2.5 text-xs">
                 <div className="flex items-center justify-between">
@@ -94,6 +112,18 @@ export const BatchManagementView = ({
                   <span className="text-slate-500">Storage Unit</span>
                   <span className="font-semibold text-slate-800">{batch.fridge} ({batch.minTemp}°C to {batch.maxTemp}°C)</span>
                 </div>
+
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                  <span className="text-slate-500 flex items-center gap-1">
+                    <Flame className="w-3.5 h-3.5 text-amber-500" />
+                    Heat Budget (60m)
+                  </span>
+                  <span className={`font-mono font-bold ${
+                    isDiscard ? 'text-red-600' : isAtRisk ? 'text-amber-600' : 'text-slate-800'
+                  }`}>
+                    {batch.remainingMinutes ?? 39}m left ({batch.remainingPct ?? 65}%)
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -109,7 +139,8 @@ export const BatchManagementView = ({
               </button>
             </div>
           </div>
-        ))}
+        );
+      })}
       </div>
     </div>
   );

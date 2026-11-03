@@ -39,8 +39,21 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
 
   const [compressorWattage, setCompressorWattage] = useState(0);
   const [humidity, setHumidity] = useState(48.5);
-  const [heatBudgetUsed, setHeatBudgetUsed] = useState(35);
   const [lastUpdated, setLastUpdated] = useState('');
+
+  // Batch Heat Budget (60 Minutes total per batch):
+  // 1. > 8°C: Exposure accumulated at 1x
+  // 2. > 12°C: Exposure accumulated at 2x (দ্বিগুণ গণনা)
+  // 3. Time remaining < 20%: Status becomes "At Risk"
+  // 4. Time remaining = 0%: Status becomes "Discard"
+  // 5. Red LED alarm latched until Admin Reset
+  const TOTAL_BUDGET_SECONDS = 3600; // 60 minutes
+  const [remainingBudgetSeconds, setRemainingBudgetSeconds] = useState(2340); // 39m left = 65% remaining margin (35% used)
+  const remainingBudgetRef = useRef(2340);
+  remainingBudgetRef.current = remainingBudgetSeconds;
+  const [isRedLedAlarm, setIsRedLedAlarm] = useState(false);
+  const isRedLedAlarmRef = useRef(false);
+  isRedLedAlarmRef.current = isRedLedAlarm;
 
   // Door simulation countdown
   const [doorOpenCountdown, setDoorOpenCountdown] = useState(0);
@@ -118,11 +131,16 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
         timeStr
       );
 
-      // Temperature calculation according to thermostat cycle
+      // Temperature calculation according to thermostat cycle & door state
       setLiveTemp((prevTemp) => {
         let nextTemp = prevTemp;
+        const isDoorOpen = doorOpenCountdownRef.current > 0;
 
-        if (liveCompressorRef.current === 'Running') {
+        if (isDoorOpen) {
+          // Door open causes rapid warming that can exceed 8°C and 12°C
+          const doorWarmRate = 0.5 + (Math.random() * 0.15);
+          nextTemp = Number((prevTemp + doorWarmRate).toFixed(1));
+        } else if (liveCompressorRef.current === 'Running') {
           // ACTIVE COOLING: drops from 7°C down to 3°C
           const coolingRate = 0.24 + (Math.random() * 0.08);
           nextTemp = Number((prevTemp - coolingRate).toFixed(1));
@@ -140,8 +158,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
           }
         } else {
           // COMPRESSOR OFF: Ambient warming towards 7°C
-          const isDoorOpen = doorOpenCountdownRef.current > 0;
-          const warmRate = isDoorOpen ? 0.45 : 0.12 + (Math.random() * 0.05);
+          const warmRate = 0.12 + (Math.random() * 0.05);
           nextTemp = Number((prevTemp + warmRate).toFixed(1));
 
           // 7°C threshold reached:
@@ -155,8 +172,31 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
               setCompressorWattage(142);
             } else {
               // Still within 60s delay: Compressor MUST NOT turn on!
-              nextTemp = Math.min(7.4, nextTemp);
+              nextTemp = Number(Math.min(7.6, nextTemp).toFixed(1));
             }
+          }
+        }
+
+        // BATCH HEAT BUDGET EXPOSURE ENGINE:
+        // Rule: > 8°C accumulates 1x, > 12°C accumulates 2x (দ্বিগুণ গণনা)
+        let exposureMultiplier = 0;
+        if (nextTemp > 12.0) {
+          exposureMultiplier = 2; // > 12°C: double exposure rate
+        } else if (nextTemp > 8.0) {
+          exposureMultiplier = 1; // > 8°C: standard exposure rate
+        }
+
+        if (exposureMultiplier > 0 && remainingBudgetRef.current > 0) {
+          // Deduct exposure proportional to time (exposureMultiplier * 2s simulated delta per tick)
+          const deduction = exposureMultiplier * 2;
+          const nextRemaining = Math.max(0, remainingBudgetRef.current - deduction);
+          remainingBudgetRef.current = nextRemaining;
+          setRemainingBudgetSeconds(nextRemaining);
+
+          // If remaining budget reaches 0, trigger and LATCH the Red LED alarm!
+          if (nextRemaining <= 0) {
+            setIsRedLedAlarm(true);
+            isRedLedAlarmRef.current = true;
           }
         }
 
@@ -207,8 +247,45 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
 
   const triggerDoorSimulation = () => {
     setLiveDoor('Open');
-    setDoorOpenCountdown(7);
-    doorOpenCountdownRef.current = 7;
+    setDoorOpenCountdown(10);
+    doorOpenCountdownRef.current = 10;
+  };
+
+  // Test helper: elevate temp above 8°C to verify 1x exposure rate
+  const simulateSpike8 = () => {
+    setLiveTemp(9.2);
+    setLiveDoor('Open');
+    setDoorOpenCountdown(12);
+    doorOpenCountdownRef.current = 12;
+  };
+
+  // Test helper: elevate temp above 12°C to verify 2x exposure rate (দ্বিগুণ)
+  const simulateSpike12 = () => {
+    setLiveTemp(13.4);
+    setLiveDoor('Open');
+    setDoorOpenCountdown(16);
+    doorOpenCountdownRef.current = 16;
+  };
+
+  // Fast forward budget to test "At Risk" (< 20%) and "Discard" (0%) immediately
+  const fastDeductExposure = () => {
+    setRemainingBudgetSeconds((prev) => {
+      const next = Math.max(0, prev - 720); // deduct 12 minutes (720 seconds)
+      remainingBudgetRef.current = next;
+      if (next <= 0) {
+        setIsRedLedAlarm(true);
+        isRedLedAlarmRef.current = true;
+      }
+      return next;
+    });
+  };
+
+  // Admin Reset: Required to extinguish the Red LED and restore batch safety
+  const handleAdminReset = () => {
+    setIsRedLedAlarm(false);
+    isRedLedAlarmRef.current = false;
+    setRemainingBudgetSeconds(3600); // 60 minutes restored
+    remainingBudgetRef.current = 3600;
   };
 
   const resetBaseline = () => {
@@ -222,10 +299,29 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
     compressorCooldownRef.current = 0;
     setDoorOpenCountdown(0);
     doorOpenCountdownRef.current = 0;
-    setHeatBudgetUsed(35);
+    setRemainingBudgetSeconds(2340);
+    remainingBudgetRef.current = 2340;
+    setIsRedLedAlarm(false);
+    isRedLedAlarmRef.current = false;
   };
 
-  const remainingMargin = 100 - heatBudgetUsed;
+  // Heat Budget percentage & status derivation:
+  // - 60 min total = 3600 seconds
+  // - remainingPercent = (remainingBudgetSeconds / 3600) * 100
+  // - If remaining <= 0: "Discard"
+  // - If remaining < 20%: "At Risk"
+  // - Otherwise: "Safe"
+  const remainingPercent = Math.max(0, Math.min(100, Math.round((remainingBudgetSeconds / TOTAL_BUDGET_SECONDS) * 100)));
+  const heatBudgetUsed = 100 - remainingPercent;
+  const remainingMargin = remainingPercent;
+  const remainingMinutes = Math.floor(remainingBudgetSeconds / 60);
+
+  let batchStatus = 'Safe';
+  if (remainingBudgetSeconds <= 0 || remainingPercent <= 0) {
+    batchStatus = 'Discard';
+  } else if (remainingPercent < 20) {
+    batchStatus = 'At Risk';
+  }
 
   // SVG Chart Geometry
   const svgWidth = 620;
@@ -234,10 +330,13 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
   const graphWidth = svgWidth - padding.left - padding.right;
   const graphHeight = svgHeight - padding.top - padding.bottom;
 
-  // Temperature scale: 0°C to 8°C with 1°C steps (1 ghor kore)
+  // Temperature scale: 0°C to 8°C (expands if excursion test >8°C or >12°C occurs)
   const minTemp = 0;
-  const maxTemp = 8;
-  const gridSteps = [8, 7, 6, 5, 4, 3, 2, 1, 0]; // 1°C increments!
+  const maxTemp = Math.max(8, Math.ceil(liveTemp));
+  const gridSteps = [];
+  for (let t = maxTemp; t >= 0; t--) {
+    gridSteps.push(t);
+  }
 
   const getY = (val) => {
     const clamped = Math.max(minTemp, Math.min(maxTemp, val));
@@ -424,13 +523,31 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
         <div className="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2 text-slate-800 font-bold text-base">
+              <div className="flex items-center gap-2 text-slate-800 font-bold text-base flex-wrap">
                 <Flame className="w-5 h-5 text-amber-500 fill-amber-500" />
                 <span>Heat Budget</span>
+                {isRedLedAlarm && (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-50 text-red-700 text-[10px] font-bold rounded-full animate-pulse border border-red-300">
+                    <span className="w-2 h-2 rounded-full bg-red-600 shadow-[0_0_8px_rgba(239,68,68,1)]"></span>
+                    RED LED ACTIVE
+                  </span>
+                )}
               </div>
-              <span className="text-[11px] font-mono text-slate-400">
-                RH: {humidity}%
-              </span>
+              <div className="flex items-center gap-2">
+                {isRedLedAlarm && (
+                  <button
+                    onClick={handleAdminReset}
+                    className="px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] rounded-md shadow-xs transition-colors flex items-center gap-1"
+                    title="Admin Reset required to acknowledge breach and clear Red LED"
+                  >
+                    <RotateCcw className="w-2.5 h-2.5" />
+                    Admin Reset
+                  </button>
+                )}
+                <span className="text-[11px] font-mono text-slate-400">
+                  RH: {humidity}%
+                </span>
+              </div>
             </div>
 
             <div className="flex items-center justify-around gap-4 py-2">
@@ -449,7 +566,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
                     cy="50"
                     r="40"
                     fill="transparent"
-                    stroke="#f97316"
+                    stroke={batchStatus === 'Discard' ? '#ef4444' : batchStatus === 'At Risk' ? '#f59e0b' : '#f97316'}
                     strokeWidth="12"
                     strokeDasharray={2 * Math.PI * 40}
                     strokeDashoffset={(2 * Math.PI * 40) * (1 - heatBudgetUsed / 100)}
@@ -458,27 +575,62 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-2xl font-extrabold text-slate-900 font-mono">
+                  <span className={`text-2xl font-extrabold font-mono ${batchStatus === 'Discard' ? 'text-red-600' : batchStatus === 'At Risk' ? 'text-amber-600' : 'text-slate-900'}`}>
                     {heatBudgetUsed}%
                   </span>
-                  <span className="text-xs font-semibold text-slate-500">Used</span>
+                  <span className="text-xs font-semibold text-slate-500">
+                    {batchStatus === 'Discard' ? 'DISCARD' : 'Used'}
+                  </span>
                 </div>
               </div>
 
               <div className="space-y-1">
                 <span className="text-xs font-medium text-slate-500 block">Remaining Safety Margin</span>
-                <span className="text-3xl font-extrabold text-slate-900 font-mono block">
-                  {remainingMargin}%
+                <span className={`text-3xl font-extrabold font-mono block ${batchStatus === 'Discard' ? 'text-red-600' : batchStatus === 'At Risk' ? 'text-amber-600' : 'text-slate-900'}`}>
+                  {remainingPercent}%
                 </span>
-                <span className="text-[11px] text-emerald-600 font-medium">Nominal threshold &gt; 40%</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
+                    batchStatus === 'Discard'
+                      ? 'bg-red-100 text-red-700 border border-red-200'
+                      : batchStatus === 'At Risk'
+                      ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                      : 'text-emerald-600 font-medium'
+                  }`}>
+                    {batchStatus === 'Discard' ? 'Discard (0%)' : batchStatus === 'At Risk' ? 'At Risk (< 20%)' : 'Safe (> 20%)'}
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-mono block">
+                  {remainingMinutes}m left / 60m budget
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl flex items-center gap-2.5 text-xs text-indigo-900 font-medium">
-            <Info className="w-4 h-4 text-indigo-600 shrink-0" />
-            <span>System is within safe limits (WHO PQS standard).</span>
-          </div>
+          {batchStatus === 'Discard' ? (
+            <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between text-xs text-red-900 font-medium">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 animate-bounce" />
+                <span>60m budget exhausted. Status: DISCARD. Red LED latched until Admin Reset.</span>
+              </div>
+              <button
+                onClick={handleAdminReset}
+                className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-[11px] shrink-0"
+              >
+                Admin Reset
+              </button>
+            </div>
+          ) : batchStatus === 'At Risk' ? (
+            <div className="mt-6 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2.5 text-xs text-amber-900 font-medium">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Warning: Remaining budget &lt; 20% ({remainingMinutes}m left). Status: At Risk (&gt;8°C exposure).</span>
+            </div>
+          ) : (
+            <div className="mt-6 p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl flex items-center gap-2.5 text-xs text-indigo-900 font-medium">
+              <Info className="w-4 h-4 text-indigo-600 shrink-0" />
+              <span>System is within safe limits (WHO PQS standard · 60m Batch Budget).</span>
+            </div>
+          )}
         </div>
 
         {/* Temperature Trend Card - 1°C Grid Increments with visible up-and-down waves! */}
@@ -671,7 +823,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
               Live wave telemetry active (1°C resolution)
             </span>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setIsLiveStream(!isLiveStream)}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition-colors"
@@ -689,6 +841,41 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
                 <DoorOpen className="w-3 h-3 text-amber-600" />
                 <span>Simulate Door Open</span>
               </button>
+
+              <button
+                onClick={simulateSpike8}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium text-xs border border-indigo-200 transition-colors"
+                title="Elevate temperature > 8°C (1x Exposure rate)"
+              >
+                <span>&gt;8°C (1x)</span>
+              </button>
+
+              <button
+                onClick={simulateSpike12}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-medium text-xs border border-rose-200 transition-colors"
+                title="Elevate temperature > 12°C (2x Double Exposure rate)"
+              >
+                <span>&gt;12°C (2x)</span>
+              </button>
+
+              <button
+                onClick={fastDeductExposure}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition-colors"
+                title="Fast forward: deduct 12m budget to test At Risk (<20%) & Discard (0%)"
+              >
+                <span>-12m Budget</span>
+              </button>
+
+              {isRedLedAlarm && (
+                <button
+                  onClick={handleAdminReset}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors shadow-xs animate-pulse"
+                  title="Admin Reset required to clear Red LED alarm"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Admin Reset</span>
+                </button>
+              )}
 
               <button
                 onClick={resetBaseline}
