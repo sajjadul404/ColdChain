@@ -8,71 +8,70 @@ import {
   CheckCircle2, 
   Flame, 
   Info, 
-  RefreshCw,
-  Activity,
-  Radio,
-  Wifi,
-  Play,
-  Pause,
-  AlertTriangle,
-  RotateCcw
+  Radio, 
+  Wifi, 
+  Play, 
+  Pause, 
+  AlertTriangle, 
+  RotateCcw,
+  Activity
 } from 'lucide-react';
 
 export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
   const [selectedFridgeId, setSelectedFridgeId] = useState('fridge-a');
   const [isLiveStream, setIsLiveStream] = useState(true);
-  const [streamSpeed, setStreamSpeed] = useState(2000); // 2 seconds per tick
+  const [streamSpeed, setStreamSpeed] = useState(1800); // 1.8 seconds per tick
+
+  // Thermodynamic wave cycle counter to create visible, natural up-and-down undulations
+  const cyclePhaseRef = useRef(1.2);
 
   // Live dynamic telemetry state
-  const [liveTemp, setLiveTemp] = useState(2.52);
+  const [liveTemp, setLiveTemp] = useState(2.8);
   const [liveDoor, setLiveDoor] = useState('Closed');
   const [livePower, setLivePower] = useState('On');
   const [liveCompressor, setLiveCompressor] = useState('Running');
-  const [compressorWattage, setCompressorWattage] = useState(126);
+  const [compressorWattage, setCompressorWattage] = useState(128);
   const [humidity, setHumidity] = useState(48.5);
   const [heatBudgetUsed, setHeatBudgetUsed] = useState(35);
-  const [packetCount, setPacketCount] = useState(1482);
+  const [packetCount, setPacketCount] = useState(1540);
   const [lastUpdated, setLastUpdated] = useState('');
-  const [secondsAgo, setSecondsAgo] = useState(0);
 
-  // Door simulation timer
+  // Door simulation countdown
   const [doorOpenCountdown, setDoorOpenCountdown] = useState(0);
 
-  // Live rolling trend history (keep last 16 points for smooth live line scrolling)
-  const [rollingTrend, setRollingTrend] = useState(() => {
-    return [
-      { time: '12:00', temp: 2.55 },
-      { time: '12:05', temp: 2.48 },
-      { time: '12:10', temp: 2.50 },
-      { time: '12:15', temp: 2.54 },
-      { time: '12:20', temp: 2.49 },
-      { time: '12:25', temp: 2.52 },
-      { time: '12:30', temp: 2.51 },
-      { time: '12:35', temp: 2.53 },
-      { time: '12:40', temp: 2.47 },
-      { time: '12:45', temp: 2.50 },
-      { time: '12:50', temp: 2.52 },
-      { time: '12:55', temp: 2.55 },
-      { time: '13:00', temp: 2.51 },
-      { time: '13:05', temp: 2.49 },
-      { time: '13:10', temp: 2.53 },
-      { time: '13:15', temp: 2.52 },
-    ];
-  });
+  // Initial rolling trend with clearly visible waves (oscillating visibly between 2.0°C and 3.6°C)
+  const [rollingTrend, setRollingTrend] = useState([
+    { time: '12:00', temp: 2.2 },
+    { time: '12:05', temp: 2.6 },
+    { time: '12:10', temp: 3.1 },
+    { time: '12:15', temp: 3.5 },
+    { time: '12:20', temp: 3.2 },
+    { time: '12:25', temp: 2.7 },
+    { time: '12:30', temp: 2.2 },
+    { time: '12:35', temp: 2.0 },
+    { time: '12:40', temp: 2.4 },
+    { time: '12:45', temp: 2.9 },
+    { time: '12:50', temp: 3.4 },
+    { time: '12:55', temp: 3.3 },
+    { time: '13:00', temp: 2.8 },
+    { time: '13:05', temp: 2.3 },
+    { time: '13:10', temp: 2.1 },
+    { time: '13:15', temp: 2.8 },
+  ]);
 
-  // Recent live packet stream feed (simulated incoming MQTT/LoRa packets)
-  const [recentPackets, setRecentPackets] = useState(() => [
-    { id: 1, time: 'Just now', sensor: 'SN-0481A', temp: 2.52, door: 'Closed', hmac: '0x8f4d92', status: 'VALID' },
-    { id: 2, time: '2s ago', sensor: 'SN-0481A', temp: 2.50, door: 'Closed', hmac: '0x3e1a07', status: 'VALID' },
-    { id: 3, time: '4s ago', sensor: 'SN-0481A', temp: 2.53, door: 'Closed', hmac: '0x9b2c4e', status: 'VALID' },
-    { id: 4, time: '6s ago', sensor: 'SN-0481A', temp: 2.49, door: 'Closed', hmac: '0x1c88d2', status: 'VALID' },
+  // Recent live incoming MQTT packets
+  const [recentPackets, setRecentPackets] = useState([
+    { id: 1, time: 'Just now', sensor: 'SN-FridgeA-01', temp: 2.8, door: 'Closed', hmac: '0x8f4d92', status: 'VALID' },
+    { id: 2, time: '2s ago', sensor: 'SN-FridgeA-01', temp: 2.5, door: 'Closed', hmac: '0x3e1a07', status: 'VALID' },
+    { id: 3, time: '4s ago', sensor: 'SN-FridgeA-01', temp: 2.2, door: 'Closed', hmac: '0x9b2c4e', status: 'VALID' },
+    { id: 4, time: '6s ago', sensor: 'SN-FridgeA-01', temp: 2.4, door: 'Closed', hmac: '0x1c88d2', status: 'VALID' },
   ]);
 
   const [hoveredPoint, setHoveredPoint] = useState(null);
 
   const activeFridge = fridges.find((f) => f.id === selectedFridgeId) || fridges[0];
 
-  // Update clock
+  // Live timestamp clock
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -85,7 +84,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
     updateTime();
   }, []);
 
-  // Main Live Telemetry Stream simulation ticker
+  // Main Live Telemetry Stream with visible wave fluctuations (utha nama)
   useEffect(() => {
     if (!isLiveStream) return;
 
@@ -93,81 +92,67 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
       const now = new Date();
       const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-      setSecondsAgo(0);
       setLastUpdated(
         now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
         ', ' +
         timeStr
       );
 
-      // Temperature calculation with realistic micro-variations
-      setLiveTemp((prev) => {
-        let nextTemp;
-        if (doorOpenCountdown > 0) {
-          // If door is opened, temp gently rises towards 3.5°C
-          nextTemp = Math.min(4.2, prev + 0.12 + Math.random() * 0.08);
-        } else {
-          // Normal baseline target around 2.50°C
-          const target = 2.50;
-          const drift = (Math.random() - 0.49) * 0.06;
-          const pullToTarget = (target - prev) * 0.15;
-          nextTemp = Number((prev + drift + pullToTarget).toFixed(2));
-          // keep safely bounded
-          if (nextTemp < 2.25) nextTemp = 2.30;
-          if (nextTemp > 2.85) nextTemp = 2.80;
-        }
+      // Advance thermodynamic cycle phase for natural visible rising and falling waves
+      cyclePhaseRef.current += 0.4;
+      const wave = Math.sin(cyclePhaseRef.current); // ranges between -1 and 1
+      
+      // Calculate realistic temperature: base around 2.8°C with ±0.75°C swing
+      let nextTemp;
+      if (doorOpenCountdown > 0) {
+        // Door open warm-up towards 4.2°C - 4.5°C
+        nextTemp = Number((3.6 + Math.random() * 0.7).toFixed(1));
+      } else {
+        // Cooling hysteresis cycle: swings visibly between 2.1°C and 3.6°C
+        const raw = 2.8 + wave * 0.75 + (Math.random() - 0.5) * 0.15;
+        nextTemp = Number(Math.max(1.8, Math.min(4.2, raw)).toFixed(1));
+      }
 
-        // Add to rolling trend graph
-        setRollingTrend((oldTrend) => {
-          const newPoint = {
-            time: timeStr.slice(0, 5),
-            temp: Number(nextTemp.toFixed(2)),
-          };
-          const updated = [...oldTrend.slice(1), newPoint];
-          return updated;
-        });
+      setLiveTemp(nextTemp);
 
-        // Add new packet to recent packets feed
-        setRecentPackets((oldPackets) => {
-          const randomHex = Math.random().toString(16).substring(2, 8);
-          const newPacket = {
-            id: Date.now(),
-            time: 'Just now',
-            sensor: `SN-${activeFridge.name.replace(/\s+/g, '')}-01`,
-            temp: Number(nextTemp.toFixed(2)),
-            door: doorOpenCountdown > 0 ? 'Open' : 'Closed',
-            hmac: `0x${randomHex}`,
-            status: 'VALID',
-          };
-          return [newPacket, ...oldPackets.slice(0, 4)];
-        });
-
-        return nextTemp;
+      // Push new point into rolling trend graph
+      setRollingTrend((oldTrend) => {
+        const newPoint = {
+          time: timeStr.slice(0, 5),
+          temp: nextTemp,
+        };
+        return [...oldTrend.slice(1), newPoint];
       });
 
-      // Modulate compressor wattage slightly
-      setCompressorWattage((prev) => {
-        const delta = Math.floor((Math.random() - 0.5) * 6);
-        return Math.max(118, Math.min(136, prev + delta));
+      // Update packet ticker
+      setRecentPackets((oldPackets) => {
+        const randomHex = Math.random().toString(16).substring(2, 8);
+        const newPacket = {
+          id: Date.now(),
+          time: 'Just now',
+          sensor: `SN-${activeFridge.name.replace(/\s+/g, '')}-01`,
+          temp: nextTemp,
+          door: doorOpenCountdown > 0 ? 'Open' : 'Closed',
+          hmac: `0x${randomHex}`,
+          status: 'VALID',
+        };
+        return [newPacket, ...oldPackets.slice(0, 3)];
       });
 
-      // Humidity slight fluctuation
+      // Modulate compressor wattage dynamically based on cooling load
+      setCompressorWattage(() => {
+        if (nextTemp > 3.0) return 138; // high cooling demand
+        if (nextTemp < 2.3) return 114; // low cooling demand
+        return 126;
+      });
+
       setHumidity((prev) => {
-        const delta = (Math.random() - 0.5) * 0.2;
+        const delta = (Math.random() - 0.5) * 0.3;
         return Number((prev + delta).toFixed(1));
-      });
-
-      // Heat budget slight micro-variation
-      setHeatBudgetUsed((prev) => {
-        if (doorOpenCountdown > 0) {
-          return Math.min(42, prev + 1);
-        }
-        return 35;
       });
 
       setPacketCount((c) => c + 1);
 
-      // Decrement door countdown if active
       if (doorOpenCountdown > 0) {
         setDoorOpenCountdown((c) => {
           if (c <= 1) {
@@ -182,35 +167,35 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
     return () => clearInterval(interval);
   }, [isLiveStream, streamSpeed, doorOpenCountdown, activeFridge.name]);
 
-  // Door open simulation handler
   const triggerDoorSimulation = () => {
     setLiveDoor('Open');
-    setDoorOpenCountdown(8); // 8 ticks of open door
+    setDoorOpenCountdown(7);
   };
 
-  // Reset to default baseline
   const resetBaseline = () => {
-    setLiveTemp(2.50);
+    setLiveTemp(2.8);
     setLiveDoor('Closed');
     setLivePower('On');
     setLiveCompressor('Running');
     setCompressorWattage(126);
     setDoorOpenCountdown(0);
     setHeatBudgetUsed(35);
+    cyclePhaseRef.current = 1.2;
   };
 
   const remainingMargin = 100 - heatBudgetUsed;
 
-  // SVG dimensions for Temperature Trend Chart
+  // SVG Chart Geometry
   const svgWidth = 620;
-  const svgHeight = 170;
+  const svgHeight = 180;
   const padding = { top: 20, right: 30, bottom: 30, left: 45 };
   const graphWidth = svgWidth - padding.left - padding.right;
   const graphHeight = svgHeight - padding.top - padding.bottom;
 
-  // Temperature scale: 0°C to 10°C (WHO standard)
+  // Temperature scale: 0°C to 6°C with 1°C steps (1 ghor kore) as requested!
   const minTemp = 0;
-  const maxTemp = 10;
+  const maxTemp = 6;
+  const gridSteps = [6, 5, 4, 3, 2, 1, 0]; // 1°C increments!
 
   const getY = (val) => {
     const clamped = Math.max(minTemp, Math.min(maxTemp, val));
@@ -236,20 +221,19 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
 
   const areaD = `${pathD} L ${points[points.length - 1].x} ${getY(0)} L ${points[0].x} ${getY(0)} Z`;
 
-  const marginUpperY = getY(8);
-  const marginLowerY = getY(2);
+  // Safe margin band: 2°C to 6°C visible envelope
+  const marginLowerY = getY(2); // 2°C threshold line
+  const marginUpperY = getY(6); // 6°C upper visible bound
 
-  // Latest point for pulsating radar dot
   const latestPoint = points[points.length - 1];
 
   return (
     <div className="space-y-6">
-      {/* Top Banner / Dashboard Header matching original design with live indicators */}
+      {/* Top Banner / Dashboard Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold tracking-tight text-slate-900">Live Dashboard</h2>
-            {/* Live Streaming Badge */}
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-xs">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -273,7 +257,6 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
 
         {/* Right Status Pill & Fridge Selector */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Fridge Selector */}
           <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-medium">
             {fridges.map((fridge) => (
               <button
@@ -293,7 +276,6 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
             ))}
           </div>
 
-          {/* System Online Badge with live updated seconds */}
           <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl px-4 py-2 flex items-center gap-3 shadow-xs">
             <div className="flex items-center gap-1.5 text-emerald-700 font-bold text-xs">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -307,9 +289,9 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
         </div>
       </div>
 
-      {/* 4 Quick Metric Cards with live active indicators */}
+      {/* 4 Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Temperature (Dynamically oscillating with live glow) */}
+        {/* Card 1: Temperature */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex items-center gap-4 hover:border-sky-300 transition-all relative overflow-hidden group">
           <div className="w-13 h-13 rounded-2xl bg-sky-50 flex items-center justify-center text-sky-600 shrink-0 group-hover:scale-105 transition-transform">
             <Thermometer className="w-7 h-7" />
@@ -326,7 +308,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-2xl font-extrabold text-slate-900 font-mono tabular-nums tracking-tight">
-                {liveTemp.toFixed(2)}°C
+                {liveTemp.toFixed(1)}°C
               </span>
               <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
                 <CheckCircle2 className="w-3.5 h-3.5" />
@@ -415,7 +397,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
         </div>
       </div>
 
-      {/* Middle Section: Heat Budget & Real-time Temperature Trend Graph */}
+      {/* Middle Section: Heat Budget & Temperature Trend Graph with 1°C Grid Steps */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Heat Budget Card */}
         <div className="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
@@ -431,7 +413,6 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
             </div>
 
             <div className="flex items-center justify-around gap-4 py-2">
-              {/* Donut Chart with smooth CSS transition */}
               <div className="relative w-36 h-36 flex items-center justify-center">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                   <circle
@@ -479,15 +460,20 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
           </div>
         </div>
 
-        {/* Temperature Trend Card with LIVE moving curve */}
+        {/* Temperature Trend Card - 1°C Grid Increments with visible up-and-down waves! */}
         <div className="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-slate-900">Temperature Trend</h3>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-md font-mono border border-indigo-100">
+                  1°C Step Grid
+                </span>
               </div>
-              <p className="text-xs text-slate-400">Live 16-point moving window · Realtime sensor RTD</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Real-time undulating sensor readings · 1°C vertical resolution
+              </p>
             </div>
 
             <div className="flex items-center gap-4 text-xs font-medium">
@@ -496,8 +482,8 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
                 <span className="text-slate-600">Temperature</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-0.5 bg-sky-300 border-t border-sky-400 inline-block"></span>
-                <span className="text-slate-600">Margin (2°C - 8°C)</span>
+                <span className="w-3 h-0.5 bg-emerald-400 border-t border-emerald-500 inline-block"></span>
+                <span className="text-slate-600">Safe Limit (2°C - 8°C)</span>
               </div>
             </div>
           </div>
@@ -510,30 +496,39 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
             >
               <defs>
                 <linearGradient id="tempGradientLive" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6366f1" stopOpacity="0.28" />
-                  <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
+                  <stop offset="0%" stopColor="#6366f1" stopOpacity="0.32" />
+                  <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
                 </linearGradient>
                 <linearGradient id="marginBandLive" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.08" />
-                  <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.02" />
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.08" />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.02" />
                 </linearGradient>
               </defs>
 
-              {/* Safe margin band between 2°C and 8°C */}
+              {/* WHO Safe Temperature Region (from 2°C upwards) */}
               <rect
                 x={padding.left}
                 y={marginUpperY}
                 width={graphWidth}
                 height={marginLowerY - marginUpperY}
                 fill="url(#marginBandLive)"
-                stroke="#bae6fd"
-                strokeWidth="1"
-                strokeDasharray="4 4"
               />
 
-              {/* Y-axis grid lines */}
-              {[10, 5, 0].map((val) => {
+              {/* WHO 2°C Minimum Threshold Line */}
+              <line
+                x1={padding.left}
+                y1={marginLowerY}
+                x2={svgWidth - padding.right}
+                y2={marginLowerY}
+                stroke="#10b981"
+                strokeWidth="1.5"
+                strokeDasharray="4 3"
+              />
+
+              {/* 1°C Grid Lines (1 ghor kore): 6°C, 5°C, 4°C, 3°C, 2°C, 1°C, 0°C */}
+              {gridSteps.map((val) => {
                 const y = getY(val);
+                const isTwoDegreeThreshold = val === 2;
                 return (
                   <g key={val}>
                     <line
@@ -541,14 +536,17 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
                       y1={y}
                       x2={svgWidth - padding.right}
                       y2={y}
-                      stroke="#f1f5f9"
-                      strokeWidth="1"
+                      stroke={isTwoDegreeThreshold ? '#a7f3d0' : '#e2e8f0'}
+                      strokeWidth={isTwoDegreeThreshold ? '1.5' : '1'}
+                      strokeDasharray={isTwoDegreeThreshold ? '3 3' : '2 2'}
                     />
                     <text
                       x={padding.left - 8}
                       y={y + 4}
                       textAnchor="end"
-                      className="text-[10px] fill-slate-400 font-mono"
+                      className={`text-[10px] font-mono font-semibold ${
+                        isTwoDegreeThreshold ? 'fill-emerald-600 font-bold' : 'fill-slate-500'
+                      }`}
                     >
                       {val}°C
                     </text>
@@ -557,45 +555,45 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
               })}
 
               {/* Live Area Fill */}
-              <path d={areaD} fill="url(#tempGradientLive)" className="transition-all duration-500 ease-linear" />
+              <path d={areaD} fill="url(#tempGradientLive)" className="transition-all duration-300 ease-out" />
 
-              {/* Main Line with smooth curve */}
+              {/* Main Line with prominent curve */}
               <path
                 d={pathD}
                 fill="none"
                 stroke="#4f46e5"
-                strokeWidth="2.5"
+                strokeWidth="3"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="transition-all duration-500 ease-linear"
+                className="transition-all duration-300 ease-out"
               />
 
-              {/* Points */}
+              {/* Wave Points along the curve */}
               {points.map((pt, i) => (
                 <circle
                   key={i}
                   cx={pt.x}
                   cy={pt.y}
-                  r="3.5"
-                  className="fill-white stroke-[#4f46e5] stroke-2 hover:r-5 cursor-pointer transition-all"
+                  r="4"
+                  className="fill-white stroke-[#4f46e5] stroke-2 hover:r-6 cursor-pointer transition-all"
                   onMouseEnter={() => setHoveredPoint(pt)}
                   onMouseLeave={() => setHoveredPoint(null)}
                 />
               ))}
 
-              {/* Pulsing radar indicator at the latest reading point */}
+              {/* Pulsing beacon on the current active reading point */}
               {latestPoint && (
                 <g>
                   <circle
                     cx={latestPoint.x}
                     cy={latestPoint.y}
-                    r="8"
+                    r="10"
                     className="fill-indigo-400 opacity-40 animate-ping"
                   />
                   <circle
                     cx={latestPoint.x}
                     cy={latestPoint.y}
-                    r="4.5"
+                    r="5"
                     className="fill-indigo-600 stroke-white stroke-2"
                   />
                 </g>
@@ -623,10 +621,10 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
                 className="absolute bg-slate-900 text-white text-[11px] font-mono px-2.5 py-1 rounded-md shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
                 style={{
                   left: `${((hoveredPoint.temp ? points.find(p => p.time === hoveredPoint.time)?.x || 100 : 100) / svgWidth) * 100}%`,
-                  top: '40%',
+                  top: '35%',
                 }}
               >
-                {hoveredPoint.time}: {hoveredPoint.temp.toFixed(2)}°C (Safe)
+                {hoveredPoint.time}: {hoveredPoint.temp.toFixed(1)}°C (Safe)
               </div>
             )}
           </div>
@@ -635,7 +633,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
           <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs gap-3">
             <span className="flex items-center gap-1.5 text-slate-600">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Live telemetry stream active ({streamSpeed === 1000 ? '1s tick' : '2s tick'})
+              Live wave telemetry active (1°C resolution)
             </span>
 
             <div className="flex items-center gap-2">
@@ -660,7 +658,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
               <button
                 onClick={resetBaseline}
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-                title="Reset to 2.50°C baseline"
+                title="Reset to 2.8°C baseline"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
@@ -669,7 +667,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
         </div>
       </div>
 
-      {/* Real-time Inbound Sensor Packet Ticker (Clearly demonstrates live data streaming) */}
+      {/* Real-time Inbound Sensor Packet Ticker */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
           <div className="flex items-center gap-2">
@@ -702,7 +700,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
               </div>
               <div className="flex items-baseline justify-between">
                 <span className="font-bold text-slate-900 font-mono text-sm">
-                  {pkt.temp.toFixed(2)}°C
+                  {pkt.temp.toFixed(1)}°C
                 </span>
                 <span className="text-[11px] text-slate-600">
                   Door: <strong className={pkt.door === 'Open' ? 'text-amber-600 font-bold' : 'text-slate-700'}>{pkt.door}</strong>
