@@ -252,53 +252,6 @@ export default function App() {
             onLogout={handleLogout}
           />
 
-          <div className="bg-[#101744] text-white px-8 py-2.5 flex items-center justify-between text-xs overflow-x-auto gap-4 border-b border-indigo-950/50 select-none">
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="font-mono text-[10px] text-indigo-300 font-bold uppercase tracking-wider">
-                Active Role Tree:
-              </span>
-              <div className="flex bg-white/10 p-0.5 rounded-lg">
-                <button
-                  onClick={() => handleRoleChange('admin')}
-                  className={`px-3 py-1 rounded-md font-semibold transition-all ${
-                    currentRole === 'admin'
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-indigo-200 hover:text-white'
-                  }`}
-                >
-                  ADMIN (5 Views)
-                </button>
-                <button
-                  onClick={() => handleRoleChange('pharmacist')}
-                  className={`px-3 py-1 rounded-md font-semibold transition-all ${
-                    currentRole === 'pharmacist'
-                      ? 'bg-sky-600 text-white shadow-sm'
-                      : 'text-indigo-200 hover:text-white'
-                  }`}
-                >
-                  PHARMACIST (5 Views)
-                </button>
-                <button
-                  onClick={() => handleRoleChange('inspector')}
-                  className={`px-3 py-1 rounded-md font-semibold transition-all ${
-                    currentRole === 'inspector'
-                      ? 'bg-emerald-600 text-white shadow-sm'
-                      : 'text-indigo-200 hover:text-white'
-                  }`}
-                >
-                  INSPECTOR (5 Views)
-                </button>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setIsAuthenticated(false)}
-              className="text-xs text-indigo-200 hover:text-white flex items-center gap-1 font-semibold underline underline-offset-2 shrink-0"
-            >
-              &larr; Return to Login / Register Screen
-            </button>
-          </div>
-
           <main className="flex-1 p-6 lg:p-8 max-w-7xl w-full mx-auto">
             {/* ADMIN BRANCH */}
             {currentTab === 'admin-dashboard' && (
