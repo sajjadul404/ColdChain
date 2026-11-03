@@ -1,0 +1,7 @@
+{
+  "name": "ColdChain - Vaccine Safety Dashboard",
+  "description": "Real-time cold-chain monitoring, vaccine inventory management, cryptographic device security, tamper-evident audit logs, and public QR safety verification.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
