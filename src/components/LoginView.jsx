@@ -135,46 +135,48 @@ export const LoginView = ({ onLoginSuccess }) => {
         </div>
 
         {/* Right Half: Form + Role Selector matching mockup & diagram */}
-        <div className="lg:col-span-7 p-8 lg:p-10 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
-                  <Snowflake className="w-5 h-5 stroke-[2.2]" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-tight">ColdChain</h1>
-                  <p className="text-[11px] text-slate-500 font-normal">Safe Vaccines, Healthy Tomorrow.</p>
-                </div>
+        <div className="lg:col-span-7 p-8 lg:p-10 flex flex-col justify-between min-h-full">
+          {/* Top Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
+                <Snowflake className="w-5 h-5 stroke-[2.2]" />
               </div>
-
-              <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setAuthMode('login')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
-                    authMode === 'login'
-                      ? 'bg-white text-indigo-700 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Login
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAuthMode('register')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
-                    authMode === 'register'
-                      ? 'bg-white text-indigo-700 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Register
-                </button>
+              <div>
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-tight">ColdChain</h1>
+                <p className="text-[11px] text-slate-500 font-normal">Safe Vaccines, Healthy Tomorrow.</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+            <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setAuthMode('login')}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  authMode === 'login'
+                    ? 'bg-white text-indigo-700 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMode('register')}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  authMode === 'register'
+                    ? 'bg-white text-indigo-700 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Register
+              </button>
+            </div>
+          </div>
+
+          {/* Middle Centered Section: Form + Role Selector */}
+          <div className="flex-1 flex flex-col justify-center py-8">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
               <div className="md:col-span-8 space-y-4">
                 <div>
                   <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
@@ -289,8 +291,8 @@ export const LoginView = ({ onLoginSuccess }) => {
                 </form>
               </div>
 
-              <div className="md:col-span-4 space-y-2.5">
-                <span className="block text-xs font-bold text-slate-700 text-center uppercase tracking-wider mb-2">
+              <div className="md:col-span-4 space-y-3">
+                <span className="block text-xs font-bold text-slate-700 text-center uppercase tracking-wider mb-1">
                   Select Role
                 </span>
 
