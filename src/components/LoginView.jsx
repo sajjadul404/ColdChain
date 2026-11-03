@@ -7,8 +7,7 @@ import {
   Crown, 
   Stethoscope, 
   ShieldCheck, 
-  Building,
-  CheckCircle2
+  Building
 } from 'lucide-react';
 
 export const LoginView = ({ onLoginSuccess }) => {
@@ -36,8 +35,7 @@ export const LoginView = ({ onLoginSuccess }) => {
       label: 'Admin',
       icon: Crown,
       bg: 'bg-[#5046e5] text-white shadow-md shadow-indigo-600/30',
-      text: 'text-indigo-600',
-      desc: 'User Mgmt, Fridge Mgmt, System Logs, Settings',
+      idle: 'bg-slate-100 text-slate-700 hover:bg-slate-200',
     },
     pharmacist: {
       email: 'pharmacist@coldchain.health',
@@ -45,8 +43,7 @@ export const LoginView = ({ onLoginSuccess }) => {
       label: 'Pharmacist',
       icon: Stethoscope,
       bg: 'bg-sky-500 text-white shadow-md shadow-sky-400/30',
-      text: 'text-sky-600',
-      desc: 'Inventory, Batch Mgmt, QR Codes, Transfers',
+      idle: 'bg-sky-100/70 text-sky-800 hover:bg-sky-200/70',
     },
     inspector: {
       email: 'inspector@coldchain.health',
@@ -54,8 +51,7 @@ export const LoginView = ({ onLoginSuccess }) => {
       label: 'Inspector',
       icon: ShieldCheck,
       bg: 'bg-emerald-500 text-white shadow-md shadow-emerald-400/30',
-      text: 'text-emerald-600',
-      desc: 'Monitoring, Temperature, Device Logs, Reports',
+      idle: 'bg-emerald-100/70 text-emerald-800 hover:bg-emerald-200/70',
     },
   };
 
@@ -84,7 +80,6 @@ export const LoginView = ({ onLoginSuccess }) => {
   };
 
   const currentRoleMeta = roleCredentials[selectedRole];
-  const CurrentRoleIcon = currentRoleMeta.icon;
 
   return (
     <div className="min-h-screen bg-[#e8eef8] flex items-center justify-center p-4 lg:p-8">
@@ -185,25 +180,6 @@ export const LoginView = ({ onLoginSuccess }) => {
                   <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
                     {authMode === 'login' ? 'Login to Continue' : 'Register New Personnel'}
                   </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {authMode === 'login'
-                      ? 'Enter your cold chain credentials or select a role'
-                      : 'Provision role-based access for immunization facility'}
-                  </p>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-indigo-50/80 border border-indigo-200/80 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <CurrentRoleIcon className="w-4 h-4 text-indigo-600" />
-                    <span className="text-slate-700">Role Detected:</span>
-                    <strong className="text-indigo-700 font-bold uppercase tracking-wider">
-                      {currentRoleMeta.label}
-                    </strong>
-                  </div>
-                  <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                    Verified
-                  </span>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-3.5">
@@ -305,17 +281,15 @@ export const LoginView = ({ onLoginSuccess }) => {
                       <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                     ) : (
                       <>
-                        <span className="w-2 h-2 rounded-full border-2 border-white inline-block"></span>
-                        <span>
-                          {authMode === 'login' ? `Login as ${currentRoleMeta.label}` : 'Register Account'}
-                        </span>
+                        <span className="w-2.5 h-2.5 rounded-full border-2 border-white inline-block"></span>
+                        <span>{authMode === 'login' ? 'Login' : 'Register Account'}</span>
                       </>
                     )}
                   </button>
                 </form>
               </div>
 
-              <div className="md:col-span-4 space-y-3">
+              <div className="md:col-span-4 space-y-2.5">
                 <span className="block text-xs font-bold text-slate-700 text-center uppercase tracking-wider mb-2">
                   Select Role
                 </span>
@@ -330,26 +304,17 @@ export const LoginView = ({ onLoginSuccess }) => {
                       key={role}
                       type="button"
                       onClick={() => handleRoleSelect(role)}
-                      className={`w-full py-2.5 px-3 rounded-xl text-xs font-semibold flex flex-col items-center justify-center transition-all ${
+                      className={`w-full py-3 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2.5 transition-all shadow-xs ${
                         isSelected
                           ? meta.bg
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                          : meta.idle
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4" />
-                        <span>{meta.label}</span>
-                      </div>
-                      <span className={`text-[10px] mt-0.5 ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
-                        {role === 'admin' ? 'Full System' : role === 'pharmacist' ? 'Stock & QR' : 'Audit & Telemetry'}
-                      </span>
+                      <Icon className="w-4 h-4" />
+                      <span>{meta.label}</span>
                     </button>
                   );
                 })}
-
-                <div className="pt-2 text-[10px] text-slate-400 text-center leading-tight">
-                  {currentRoleMeta.desc}
-                </div>
               </div>
             </div>
           </div>
