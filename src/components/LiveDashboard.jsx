@@ -8,7 +8,6 @@ import {
   CheckCircle2, 
   Flame, 
   Info, 
-  Radio, 
   Wifi, 
   Play, 
   Pause, 
@@ -232,60 +231,31 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
       {/* Top Banner / Dashboard Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Live Dashboard</h2>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-xs">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span>LIVE DATA STREAMING</span>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 mt-1.5">
-            <Radio className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
-            <span className="text-xs font-medium text-slate-500">
-              Sensor Node: {activeFridge.name} (LoRaWAN & WiFi Mesh)
-            </span>
-            <span className="text-slate-300">·</span>
-            <span className="text-xs text-indigo-600 font-mono font-medium">
-              Packets Ingested: {packetCount.toLocaleString()}
-            </span>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Live Dashboard</h2>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span className="text-xs font-semibold text-slate-500">Real-time Monitoring</span>
           </div>
         </div>
 
-        {/* Right Status Pill & Fridge Selector */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-medium">
-            {fridges.map((fridge) => (
-              <button
-                key={fridge.id}
-                onClick={() => {
-                  setSelectedFridgeId(fridge.id);
-                  setLiveTemp(fridge.temperature);
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  selectedFridgeId === fridge.id
-                    ? 'bg-white text-indigo-700 shadow-sm font-semibold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {fridge.name}
-              </button>
-            ))}
-          </div>
-
-          <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl px-4 py-2 flex items-center gap-3 shadow-xs">
-            <div className="flex items-center gap-1.5 text-emerald-700 font-bold text-xs">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>System Online</span>
-            </div>
-            <div className="h-4 w-[1px] bg-emerald-200"></div>
-            <span className="text-[11px] text-emerald-800 font-mono font-medium">
-              Last Updated: {lastUpdated || 'Syncing...'}
-            </span>
-          </div>
+        {/* Right Fridge Selector */}
+        <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-medium">
+          {fridges.map((fridge) => (
+            <button
+              key={fridge.id}
+              onClick={() => {
+                setSelectedFridgeId(fridge.id);
+                setLiveTemp(fridge.temperature);
+              }}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                selectedFridgeId === fridge.id
+                  ? 'bg-white text-indigo-700 shadow-sm font-semibold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {fridge.name}
+            </button>
+          ))}
         </div>
       </div>
 
