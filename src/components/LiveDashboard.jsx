@@ -19,51 +19,60 @@ import {
 export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
   const [selectedFridgeId, setSelectedFridgeId] = useState('fridge-a');
   const [isLiveStream, setIsLiveStream] = useState(true);
-  const [streamSpeed, setStreamSpeed] = useState(1800); // 1.8 seconds per tick
+  const [streamSpeed, setStreamSpeed] = useState(1500); // 1.5 seconds per telemetry packet
 
-  // Thermodynamic wave cycle counter to create visible, natural up-and-down undulations
-  const cyclePhaseRef = useRef(1.2);
-
-  // Live dynamic telemetry state
-  const [liveTemp, setLiveTemp] = useState(2.8);
+  // Thermostat rule state:
+  // - 7°C reached: Compressor turns ON (Running) and actively cools down towards 3°C.
+  // - 3°C reached: Compressor turns OFF (Off) as fridge is cold enough.
+  // - 60s delay: After compressor turns OFF, it must wait at least 60 seconds before restarting.
+  const [liveTemp, setLiveTemp] = useState(6.7); // Starts near 7.0°C so user immediately sees 7°C trigger
   const [liveDoor, setLiveDoor] = useState('Closed');
   const [livePower, setLivePower] = useState('On');
-  const [liveCompressor, setLiveCompressor] = useState('Running');
-  const [compressorWattage, setCompressorWattage] = useState(128);
+  const [liveCompressor, setLiveCompressor] = useState('Off');
+  const liveCompressorRef = useRef('Off');
+  liveCompressorRef.current = liveCompressor;
+
+  // 60-second lockout delay countdown after compressor turns OFF
+  const [compressorCooldown, setCompressorCooldown] = useState(0);
+  const compressorCooldownRef = useRef(0);
+  compressorCooldownRef.current = compressorCooldown;
+
+  const [compressorWattage, setCompressorWattage] = useState(0);
   const [humidity, setHumidity] = useState(48.5);
   const [heatBudgetUsed, setHeatBudgetUsed] = useState(35);
-  const [packetCount, setPacketCount] = useState(1540);
   const [lastUpdated, setLastUpdated] = useState('');
 
   // Door simulation countdown
   const [doorOpenCountdown, setDoorOpenCountdown] = useState(0);
+  const doorOpenCountdownRef = useRef(0);
+  doorOpenCountdownRef.current = doorOpenCountdown;
 
-  // Initial rolling trend with clearly visible waves (oscillating visibly between 2.0°C and 3.6°C)
+  // Initial rolling trend showing clear cooling and warming waves between 3°C and 7°C
   const [rollingTrend, setRollingTrend] = useState([
-    { time: '12:00', temp: 2.2 },
-    { time: '12:05', temp: 2.6 },
-    { time: '12:10', temp: 3.1 },
-    { time: '12:15', temp: 3.5 },
-    { time: '12:20', temp: 3.2 },
-    { time: '12:25', temp: 2.7 },
-    { time: '12:30', temp: 2.2 },
-    { time: '12:35', temp: 2.0 },
-    { time: '12:40', temp: 2.4 },
-    { time: '12:45', temp: 2.9 },
-    { time: '12:50', temp: 3.4 },
-    { time: '12:55', temp: 3.3 },
-    { time: '13:00', temp: 2.8 },
-    { time: '13:05', temp: 2.3 },
-    { time: '13:10', temp: 2.1 },
-    { time: '13:15', temp: 2.8 },
+    { time: '12:00', temp: 3.4 },
+    { time: '12:05', temp: 4.2 },
+    { time: '12:10', temp: 5.1 },
+    { time: '12:15', temp: 6.0 },
+    { time: '12:20', temp: 6.8 },
+    { time: '12:25', temp: 7.0 },
+    { time: '12:30', temp: 6.3 },
+    { time: '12:35', temp: 5.5 },
+    { time: '12:40', temp: 4.6 },
+    { time: '12:45', temp: 3.8 },
+    { time: '12:50', temp: 3.2 },
+    { time: '12:55', temp: 3.0 },
+    { time: '13:00', temp: 3.8 },
+    { time: '13:05', temp: 4.8 },
+    { time: '13:10', temp: 5.8 },
+    { time: '13:15', temp: 6.7 },
   ]);
 
   // Recent live incoming MQTT packets
   const [recentPackets, setRecentPackets] = useState([
-    { id: 1, time: 'Just now', sensor: 'SN-FridgeA-01', temp: 2.8, door: 'Closed', hmac: '0x8f4d92', status: 'VALID' },
-    { id: 2, time: '2s ago', sensor: 'SN-FridgeA-01', temp: 2.5, door: 'Closed', hmac: '0x3e1a07', status: 'VALID' },
-    { id: 3, time: '4s ago', sensor: 'SN-FridgeA-01', temp: 2.2, door: 'Closed', hmac: '0x9b2c4e', status: 'VALID' },
-    { id: 4, time: '6s ago', sensor: 'SN-FridgeA-01', temp: 2.4, door: 'Closed', hmac: '0x1c88d2', status: 'VALID' },
+    { id: 1, time: 'Just now', sensor: 'SN-FridgeA-01', temp: 6.7, door: 'Closed', hmac: '0x8f4d92', status: 'VALID' },
+    { id: 2, time: '2s ago', sensor: 'SN-FridgeA-01', temp: 6.5, door: 'Closed', hmac: '0x3e1a07', status: 'VALID' },
+    { id: 3, time: '4s ago', sensor: 'SN-FridgeA-01', temp: 6.2, door: 'Closed', hmac: '0x9b2c4e', status: 'VALID' },
+    { id: 4, time: '6s ago', sensor: 'SN-FridgeA-01', temp: 5.8, door: 'Closed', hmac: '0x1c88d2', status: 'VALID' },
   ]);
 
   const [hoveredPoint, setHoveredPoint] = useState(null);
@@ -83,7 +92,19 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
     updateTime();
   }, []);
 
-  // Main Live Telemetry Stream with visible wave fluctuations (utha nama)
+  // 1-second interval timer for 60-second anti-short-cycle lockout countdown
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCompressorCooldown((prev) => {
+        const next = prev > 0 ? prev - 1 : 0;
+        compressorCooldownRef.current = next;
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Main Live Telemetry Stream adhering strictly to 7°C ON, 3°C OFF, and 60s delay
   useEffect(() => {
     if (!isLiveStream) return;
 
@@ -97,52 +118,73 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
         timeStr
       );
 
-      // Advance thermodynamic cycle phase for natural visible rising and falling waves
-      cyclePhaseRef.current += 0.4;
-      const wave = Math.sin(cyclePhaseRef.current); // ranges between -1 and 1
-      
-      // Calculate realistic temperature: base around 2.8°C with ±0.75°C swing
-      let nextTemp;
-      if (doorOpenCountdown > 0) {
-        // Door open warm-up towards 4.2°C - 4.5°C
-        nextTemp = Number((3.6 + Math.random() * 0.7).toFixed(1));
-      } else {
-        // Cooling hysteresis cycle: swings visibly between 2.1°C and 3.6°C
-        const raw = 2.8 + wave * 0.75 + (Math.random() - 0.5) * 0.15;
-        nextTemp = Number(Math.max(1.8, Math.min(4.2, raw)).toFixed(1));
-      }
+      // Temperature calculation according to thermostat cycle
+      setLiveTemp((prevTemp) => {
+        let nextTemp = prevTemp;
 
-      setLiveTemp(nextTemp);
+        if (liveCompressorRef.current === 'Running') {
+          // ACTIVE COOLING: drops from 7°C down to 3°C
+          const coolingRate = 0.24 + (Math.random() * 0.08);
+          nextTemp = Number((prevTemp - coolingRate).toFixed(1));
 
-      // Push new point into rolling trend graph
-      setRollingTrend((oldTrend) => {
-        const newPoint = {
-          time: timeStr.slice(0, 5),
-          temp: nextTemp,
-        };
-        return [...oldTrend.slice(1), newPoint];
-      });
+          // 3°C threshold reached: Compressor turns OFF
+          if (nextTemp <= 3.0) {
+            nextTemp = 3.0;
+            setLiveCompressor('Off');
+            liveCompressorRef.current = 'Off';
+            setCompressorWattage(0);
+            setCompressorCooldown(60); // 60s lockout delay starts!
+            compressorCooldownRef.current = 60;
+          } else {
+            setCompressorWattage(138);
+          }
+        } else {
+          // COMPRESSOR OFF: Ambient warming towards 7°C
+          const isDoorOpen = doorOpenCountdownRef.current > 0;
+          const warmRate = isDoorOpen ? 0.45 : 0.12 + (Math.random() * 0.05);
+          nextTemp = Number((prevTemp + warmRate).toFixed(1));
 
-      // Update packet ticker
-      setRecentPackets((oldPackets) => {
-        const randomHex = Math.random().toString(16).substring(2, 8);
-        const newPacket = {
-          id: Date.now(),
-          time: 'Just now',
-          sensor: `SN-${activeFridge.name.replace(/\s+/g, '')}-01`,
-          temp: nextTemp,
-          door: doorOpenCountdown > 0 ? 'Open' : 'Closed',
-          hmac: `0x${randomHex}`,
-          status: 'VALID',
-        };
-        return [newPacket, ...oldPackets.slice(0, 3)];
-      });
+          // 7°C threshold reached:
+          if (nextTemp >= 7.0) {
+            // Check if 60-second delay has expired
+            if (compressorCooldownRef.current <= 0) {
+              // Lockout finished: Compressor turns ON and starts cooling!
+              nextTemp = 7.0;
+              setLiveCompressor('Running');
+              liveCompressorRef.current = 'Running';
+              setCompressorWattage(142);
+            } else {
+              // Still within 60s delay: Compressor MUST NOT turn on!
+              nextTemp = Math.min(7.4, nextTemp);
+            }
+          }
+        }
 
-      // Modulate compressor wattage dynamically based on cooling load
-      setCompressorWattage(() => {
-        if (nextTemp > 3.0) return 138; // high cooling demand
-        if (nextTemp < 2.3) return 114; // low cooling demand
-        return 126;
+        // Push new point into rolling trend graph
+        setRollingTrend((oldTrend) => {
+          const newPoint = {
+            time: timeStr.slice(0, 5),
+            temp: nextTemp,
+          };
+          return [...oldTrend.slice(1), newPoint];
+        });
+
+        // Update packet ticker
+        setRecentPackets((oldPackets) => {
+          const randomHex = Math.random().toString(16).substring(2, 8);
+          const newPacket = {
+            id: Date.now(),
+            time: 'Just now',
+            sensor: `SN-${activeFridge.name.replace(/\s+/g, '')}-01`,
+            temp: nextTemp,
+            door: doorOpenCountdownRef.current > 0 ? 'Open' : 'Closed',
+            hmac: `0x${randomHex}`,
+            status: 'VALID',
+          };
+          return [newPacket, ...oldPackets.slice(0, 3)];
+        });
+
+        return nextTemp;
       });
 
       setHumidity((prev) => {
@@ -150,36 +192,37 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
         return Number((prev + delta).toFixed(1));
       });
 
-      setPacketCount((c) => c + 1);
-
-      if (doorOpenCountdown > 0) {
+      if (doorOpenCountdownRef.current > 0) {
         setDoorOpenCountdown((c) => {
-          if (c <= 1) {
-            setLiveDoor('Closed');
-            return 0;
-          }
-          return c - 1;
+          const next = c <= 1 ? 0 : c - 1;
+          doorOpenCountdownRef.current = next;
+          if (next === 0) setLiveDoor('Closed');
+          return next;
         });
       }
     }, streamSpeed);
 
     return () => clearInterval(interval);
-  }, [isLiveStream, streamSpeed, doorOpenCountdown, activeFridge.name]);
+  }, [isLiveStream, streamSpeed, activeFridge.name]);
 
   const triggerDoorSimulation = () => {
     setLiveDoor('Open');
     setDoorOpenCountdown(7);
+    doorOpenCountdownRef.current = 7;
   };
 
   const resetBaseline = () => {
-    setLiveTemp(2.8);
+    setLiveTemp(6.8);
     setLiveDoor('Closed');
     setLivePower('On');
-    setLiveCompressor('Running');
-    setCompressorWattage(126);
+    setLiveCompressor('Off');
+    liveCompressorRef.current = 'Off';
+    setCompressorWattage(0);
+    setCompressorCooldown(0);
+    compressorCooldownRef.current = 0;
     setDoorOpenCountdown(0);
+    doorOpenCountdownRef.current = 0;
     setHeatBudgetUsed(35);
-    cyclePhaseRef.current = 1.2;
   };
 
   const remainingMargin = 100 - heatBudgetUsed;
@@ -191,10 +234,10 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
   const graphWidth = svgWidth - padding.left - padding.right;
   const graphHeight = svgHeight - padding.top - padding.bottom;
 
-  // Temperature scale: 0°C to 6°C with 1°C steps (1 ghor kore) as requested!
+  // Temperature scale: 0°C to 8°C with 1°C steps (1 ghor kore)
   const minTemp = 0;
-  const maxTemp = 6;
-  const gridSteps = [6, 5, 4, 3, 2, 1, 0]; // 1°C increments!
+  const maxTemp = 8;
+  const gridSteps = [8, 7, 6, 5, 4, 3, 2, 1, 0]; // 1°C increments!
 
   const getY = (val) => {
     const clamped = Math.max(minTemp, Math.min(maxTemp, val));
@@ -220,9 +263,9 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
 
   const areaD = `${pathD} L ${points[points.length - 1].x} ${getY(0)} L ${points[0].x} ${getY(0)} Z`;
 
-  // Safe margin band: 2°C to 6°C visible envelope
+  // Safe margin band: 2°C to 8°C WHO safe envelope
   const marginLowerY = getY(2); // 2°C threshold line
-  const marginUpperY = getY(6); // 6°C upper visible bound
+  const marginUpperY = getY(8); // 8°C upper visible bound
 
   const latestPoint = points[points.length - 1];
 
@@ -347,21 +390,29 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
 
         {/* Card 4: Compressor */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex items-center gap-4 hover:border-purple-300 transition-all">
-          <div className="w-13 h-13 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
-            <Fan className={`w-7 h-7 ${isLiveStream ? 'animate-spin [animation-duration:3s]' : ''}`} />
+          <div className={`w-13 h-13 rounded-2xl flex items-center justify-center shrink-0 ${
+            liveCompressor === 'Running' ? 'bg-purple-50 text-purple-600' : 'bg-slate-100 text-slate-400'
+          }`}>
+            <Fan className={`w-7 h-7 ${isLiveStream && liveCompressor === 'Running' ? 'animate-spin [animation-duration:2.5s]' : ''}`} />
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Compressor</span>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-2xl font-extrabold text-slate-900">
+              <span className={`text-2xl font-extrabold ${liveCompressor === 'Running' ? 'text-slate-900' : 'text-slate-600'}`}>
                 {liveCompressor}
               </span>
-              <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <div className={`w-5 h-5 rounded-full text-white flex items-center justify-center shrink-0 shadow-xs ${
+                liveCompressor === 'Running' ? 'bg-emerald-500' : 'bg-slate-400'
+              }`}>
                 <CheckCircle2 className="w-3.5 h-3.5" />
               </div>
             </div>
             <span className="text-[10px] text-indigo-600 block font-mono mt-0.5 font-medium">
-              Load: {compressorWattage}W · Duty 62%
+              {liveCompressor === 'Running'
+                ? `Load: ${compressorWattage}W · Active Cooling (→3°C)`
+                : compressorCooldown > 0
+                  ? `60s Lockout: ${compressorCooldown}s left`
+                  : `Standby · On at 7.0°C`}
             </span>
           </div>
         </div>
@@ -438,11 +489,11 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
                 <h3 className="text-base font-bold text-slate-900">Temperature Trend</h3>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                 <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-md font-mono border border-indigo-100">
-                  1°C Step Grid
+                  1°C Step Grid (3°C - 7°C)
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Real-time undulating sensor readings · 1°C vertical resolution
+                ON at 7°C · OFF at 3°C · 60s Lockout Delay
               </p>
             </div>
 
@@ -475,7 +526,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
                 </linearGradient>
               </defs>
 
-              {/* WHO Safe Temperature Region (from 2°C upwards) */}
+              {/* WHO Safe Temperature Region (from 2°C to 8°C) */}
               <rect
                 x={padding.left}
                 y={marginUpperY}
@@ -484,7 +535,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
                 fill="url(#marginBandLive)"
               />
 
-              {/* WHO 2°C Minimum Threshold Line */}
+              {/* WHO 2°C Minimum and 8°C Maximum Threshold Lines */}
               <line
                 x1={padding.left}
                 y1={marginLowerY}
@@ -494,11 +545,21 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
                 strokeWidth="1.5"
                 strokeDasharray="4 3"
               />
+              <line
+                x1={padding.left}
+                y1={marginUpperY}
+                x2={svgWidth - padding.right}
+                y2={marginUpperY}
+                stroke="#10b981"
+                strokeWidth="1.5"
+                strokeDasharray="4 3"
+              />
 
-              {/* 1°C Grid Lines (1 ghor kore): 6°C, 5°C, 4°C, 3°C, 2°C, 1°C, 0°C */}
+              {/* 1°C Grid Lines (1 ghor kore): 8°C, 7°C, 6°C, 5°C, 4°C, 3°C, 2°C, 1°C, 0°C */}
               {gridSteps.map((val) => {
                 const y = getY(val);
-                const isTwoDegreeThreshold = val === 2;
+                const isBoundary = val === 2 || val === 8;
+                const isTrigger = val === 7 || val === 3;
                 return (
                   <g key={val}>
                     <line
@@ -506,16 +567,20 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
                       y1={y}
                       x2={svgWidth - padding.right}
                       y2={y}
-                      stroke={isTwoDegreeThreshold ? '#a7f3d0' : '#e2e8f0'}
-                      strokeWidth={isTwoDegreeThreshold ? '1.5' : '1'}
-                      strokeDasharray={isTwoDegreeThreshold ? '3 3' : '2 2'}
+                      stroke={isBoundary ? '#a7f3d0' : isTrigger ? '#cbd5e1' : '#f1f5f9'}
+                      strokeWidth={isBoundary ? '1.5' : '1'}
+                      strokeDasharray={isBoundary ? '3 3' : '2 2'}
                     />
                     <text
                       x={padding.left - 8}
                       y={y + 4}
                       textAnchor="end"
                       className={`text-[10px] font-mono font-semibold ${
-                        isTwoDegreeThreshold ? 'fill-emerald-600 font-bold' : 'fill-slate-500'
+                        isBoundary
+                          ? 'fill-emerald-600 font-bold'
+                          : isTrigger
+                            ? 'fill-indigo-600 font-bold'
+                            : 'fill-slate-400'
                       }`}
                     >
                       {val}°C
