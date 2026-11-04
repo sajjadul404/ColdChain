@@ -32,7 +32,6 @@ export const Sidebar = ({
         return [
           { id: 'admin-dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { id: 'user-mgmt', label: 'User Mgmt', icon: Users },
-          { id: 'fridge-mgmt', label: 'Fridge Mgmt', icon: Thermometer },
           { id: 'system-logs', label: 'System Logs', icon: FileText },
           { id: 'settings', label: 'Settings', icon: Settings },
         ];
