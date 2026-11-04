@@ -180,7 +180,7 @@ export const LoginView = ({ onLoginSuccess }) => {
               <div className="md:col-span-8 space-y-4">
                 <div>
                   <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                    {authMode === 'login' ? 'Login to Continue' : 'Register New Personnel'}
+                    {authMode === 'login' ? 'Login ' : 'Register '}
                   </h2>
                 </div>
 
