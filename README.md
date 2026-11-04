@@ -136,7 +136,7 @@ It provides administrators, pharmacists, and inspectors with a structured enviro
 | Web Application | Project-specific frontend & backend technologies |
 | AI Module | Temperature Prediction & Performance Analysis |
 
-## 🎯 Project Objectives
+## Project Objectives
 
 - Maintain safe storage conditions for temperature-sensitive products.
 - Improve vaccine storage visibility and monitoring.
