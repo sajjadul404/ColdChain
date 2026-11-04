@@ -60,7 +60,7 @@ export const QRCheckView = ({
   };
 
   return (
-    <div className="min-h-[calc(100vh-8rem)] flex flex-col justify-between space-y-8">
+    <div className="space-y-6">
       {/* Top Banner Navigation matching mockup */}
       <div className="flex items-center justify-between pb-4 border-b border-slate-200/80">
         <div className="flex items-center gap-2.5">
@@ -80,7 +80,7 @@ export const QRCheckView = ({
       </div>
 
       {/* Main 3-Column Display matching mockup exactly */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center py-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-2 pb-6">
         {/* Left Column: Heading, Subtitle & Medical Syringe Graphic */}
         <div className="lg:col-span-4 space-y-6">
           <div>
