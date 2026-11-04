@@ -82,14 +82,14 @@ export const LoginView = ({ onLoginSuccess }) => {
   const currentRoleMeta = roleCredentials[selectedRole];
 
   return (
-    <div className="min-h-screen bg-[#e8eef8] flex items-center justify-center p-4 lg:p-8">
-      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
+    <div className="min-h-screen bg-[#e8eef8] flex items-center justify-center p-3 sm:p-4 lg:p-8">
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0 lg:min-h-[600px]">
         {/* Left Half: Illustrated Vaccine Shield Artwork Card */}
-        <div className="lg:col-span-5 bg-gradient-to-br from-[#cde0fd] via-[#bfdbfe] to-[#93c5fd] p-8 flex flex-col items-center justify-center relative overflow-hidden select-none">
+        <div className="lg:col-span-5 bg-gradient-to-br from-[#cde0fd] via-[#bfdbfe] to-[#93c5fd] p-6 sm:p-8 flex flex-col items-center justify-center relative overflow-hidden select-none">
           <div className="absolute w-96 h-96 rounded-full bg-white/20 blur-2xl -top-10 -left-10 pointer-events-none"></div>
           <div className="absolute w-72 h-72 rounded-full bg-blue-300/30 blur-xl -bottom-10 -right-10 pointer-events-none"></div>
 
-          <div className="relative w-64 h-72 flex items-center justify-center">
+          <div className="relative w-52 sm:w-64 h-56 sm:h-72 flex items-center justify-center scale-90 sm:scale-100">
             <div className="absolute w-48 h-60 bg-white/70 backdrop-blur-md rounded-[2.5rem] shadow-xl border border-white/80 flex items-center justify-center">
               <div className="absolute top-10 w-12 h-12 flex items-center justify-center">
                 <div className="w-4 h-12 bg-sky-400 rounded-full"></div>
@@ -135,9 +135,9 @@ export const LoginView = ({ onLoginSuccess }) => {
         </div>
 
         {/* Right Half: Form + Role Selector matching mockup & diagram */}
-        <div className="lg:col-span-7 p-8 lg:p-10 flex flex-col justify-between min-h-full">
+        <div className="lg:col-span-7 p-5 sm:p-8 lg:p-10 flex flex-col justify-between min-h-full">
           {/* Top Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
                 <Snowflake className="w-5 h-5 stroke-[2.2]" />
@@ -291,32 +291,34 @@ export const LoginView = ({ onLoginSuccess }) => {
                 </form>
               </div>
 
-              <div className="md:col-span-4 space-y-3">
-                <span className="block text-xs font-bold text-slate-700 text-center uppercase tracking-wider mb-1">
+              <div className="md:col-span-4 mt-2 md:mt-0">
+                <span className="block text-xs font-bold text-slate-700 text-center uppercase tracking-wider mb-2">
                   Select Role
                 </span>
 
-                {['admin', 'pharmacist', 'inspector'].map((role) => {
-                  const meta = roleCredentials[role];
-                  const Icon = meta.icon;
-                  const isSelected = selectedRole === role;
+                <div className="grid grid-cols-3 md:grid-cols-1 gap-2 md:space-y-3">
+                  {['admin', 'pharmacist', 'inspector'].map((role) => {
+                    const meta = roleCredentials[role];
+                    const Icon = meta.icon;
+                    const isSelected = selectedRole === role;
 
-                  return (
-                    <button
-                      key={role}
-                      type="button"
-                      onClick={() => handleRoleSelect(role)}
-                      className={`w-full py-3 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2.5 transition-all shadow-xs ${
-                        isSelected
-                          ? meta.bg
-                          : meta.idle
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span>{meta.label}</span>
-                    </button>
-                  );
-                })}
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => handleRoleSelect(role)}
+                        className={`w-full py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl text-[11px] sm:text-xs font-semibold flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2.5 transition-all shadow-xs ${
+                          isSelected
+                            ? meta.bg
+                            : meta.idle
+                        }`}
+                      >
+                        <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                        <span className="truncate">{meta.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>

@@ -80,28 +80,28 @@ export const QRCheckView = ({
       </div>
 
       {/* Main 3-Column Display matching mockup exactly */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-2 pb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center pt-2 pb-6">
         {/* Left Column: Heading, Subtitle & Medical Syringe Graphic */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-4 sm:space-y-6">
           <div>
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
               Scan QR Code to Check Vaccine Status
             </h2>
-            <p className="text-sm text-slate-500 mt-2 font-medium">
+            <p className="text-xs sm:text-sm text-slate-500 mt-1.5 sm:mt-2 font-medium">
               Get real-time information without login.
             </p>
           </div>
 
-          <div className="w-44 h-44 rounded-3xl bg-gradient-to-br from-sky-50 via-indigo-50 to-blue-100 border border-sky-100 flex items-center justify-center relative shadow-sm group">
-            <div className="w-28 h-28 rounded-2xl bg-white/80 shadow-md flex items-center justify-center text-sky-600 transform -rotate-6 group-hover:rotate-0 transition-transform">
-              <Syringe className="w-14 h-14 text-sky-500" />
+          <div className="w-36 h-36 sm:w-44 sm:h-44 mx-auto sm:mx-0 rounded-3xl bg-gradient-to-br from-sky-50 via-indigo-50 to-blue-100 border border-sky-100 flex items-center justify-center relative shadow-sm group">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white/80 shadow-md flex items-center justify-center text-sky-600 transform -rotate-6 group-hover:rotate-0 transition-transform">
+              <Syringe className="w-12 h-12 sm:w-14 sm:h-14 text-sky-500" />
             </div>
-            <div className="absolute bottom-2 right-2 p-2 bg-indigo-600 rounded-xl text-white shadow-md">
-              <ShieldCheck className="w-5 h-5" />
+            <div className="absolute bottom-2 right-2 p-1.5 sm:p-2 bg-indigo-600 rounded-xl text-white shadow-md">
+              <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-1 sm:pt-2">
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
               Select Batch to Inspect:
             </label>
@@ -121,21 +121,21 @@ export const QRCheckView = ({
 
         {/* Middle Column: Large QR Code with blue corner scanning brackets */}
         <div className="lg:col-span-4 flex flex-col items-center justify-center">
-          <div className="relative p-6 bg-white rounded-3xl shadow-lg border border-slate-200/80">
-            <div className="absolute top-2 left-2 w-8 h-8 border-t-4 border-l-4 border-sky-500 rounded-tl-xl pointer-events-none"></div>
-            <div className="absolute top-2 right-2 w-8 h-8 border-t-4 border-r-4 border-sky-500 rounded-tr-xl pointer-events-none"></div>
-            <div className="absolute bottom-2 left-2 w-8 h-8 border-b-4 border-l-4 border-sky-500 rounded-bl-xl pointer-events-none"></div>
-            <div className="absolute bottom-2 right-2 w-8 h-8 border-b-4 border-r-4 border-sky-500 rounded-br-xl pointer-events-none"></div>
+          <div className="relative p-4 sm:p-6 bg-white rounded-3xl shadow-lg border border-slate-200/80">
+            <div className="absolute top-2 left-2 w-6 h-6 sm:w-8 sm:h-8 border-t-4 border-l-4 border-sky-500 rounded-tl-xl pointer-events-none"></div>
+            <div className="absolute top-2 right-2 w-6 h-6 sm:w-8 sm:h-8 border-t-4 border-r-4 border-sky-500 rounded-tr-xl pointer-events-none"></div>
+            <div className="absolute bottom-2 left-2 w-6 h-6 sm:w-8 sm:h-8 border-b-4 border-l-4 border-sky-500 rounded-bl-xl pointer-events-none"></div>
+            <div className="absolute bottom-2 right-2 w-6 h-6 sm:w-8 sm:h-8 border-b-4 border-r-4 border-sky-500 rounded-br-xl pointer-events-none"></div>
 
             {qrCodeDataUrl ? (
               <img
                 src={qrCodeDataUrl}
                 alt={`QR code for ${activeVaccine.name}`}
-                className="w-64 h-64 object-contain rounded-lg"
+                className="w-52 h-52 sm:w-64 sm:h-64 object-contain rounded-lg"
               />
             ) : (
-              <div className="w-64 h-64 flex items-center justify-center bg-slate-50 rounded-lg">
-                <QrCode className="w-16 h-16 text-slate-300 animate-pulse" />
+              <div className="w-52 h-52 sm:w-64 sm:h-64 flex items-center justify-center bg-slate-50 rounded-lg">
+                <QrCode className="w-12 h-12 sm:w-16 sm:h-16 text-slate-300 animate-pulse" />
               </div>
             )}
           </div>

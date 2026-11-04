@@ -24,6 +24,19 @@ import {
   INITIAL_REPORTS,
 } from './data/mockData.js';
 import { sha256 } from './utils/crypto.js';
+import { 
+  LayoutDashboard, 
+  Users, 
+  FileText, 
+  Settings, 
+  Boxes, 
+  Package, 
+  QrCode, 
+  ArrowLeftRight, 
+  Activity, 
+  Thermometer, 
+  FileCheck 
+} from 'lucide-react';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(true);
@@ -35,6 +48,7 @@ export default function App() {
 
   const [currentTab, setCurrentTab] = useState('admin-dashboard');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [vaccines, setVaccines] = useState(INITIAL_VACCINES);
   const [logs, setLogs] = useState(INITIAL_LOGS);
@@ -217,6 +231,35 @@ export default function App() {
     return <LoginView onLoginSuccess={handleLoginSuccess} />;
   }
 
+  const getMobileBottomNav = () => {
+    switch (currentRole) {
+      case 'admin':
+        return [
+          { id: 'admin-dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          { id: 'user-mgmt', label: 'Users', icon: Users },
+          { id: 'system-logs', label: 'Logs', icon: FileText },
+          { id: 'settings', label: 'Settings', icon: Settings },
+        ];
+      case 'pharmacist':
+        return [
+          { id: 'pharmacist-dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          { id: 'inventory', label: 'Stock', icon: Boxes },
+          { id: 'batch-mgmt', label: 'Batches', icon: Package },
+          { id: 'qr-codes', label: 'QR', icon: QrCode },
+          { id: 'transfers', label: 'Transfers', icon: ArrowLeftRight },
+        ];
+      case 'inspector':
+        return [
+          { id: 'inspector-dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          { id: 'monitoring', label: 'Monitor', icon: Activity },
+          { id: 'temperature', label: 'Temp', icon: Thermometer },
+          { id: 'reports', label: 'Reports', icon: FileCheck },
+        ];
+      default:
+        return [];
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f0f4f9] flex flex-col antialiased">
       <div className="flex-1 flex overflow-hidden">
@@ -225,6 +268,8 @@ export default function App() {
           currentTab={currentTab}
           onSelectTab={setCurrentTab}
           onLogout={handleLogout}
+          isOpenMobile={isMobileMenuOpen}
+          onCloseMobile={() => setIsMobileMenuOpen(false)}
         />
 
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
@@ -234,9 +279,10 @@ export default function App() {
             currentRole={currentRole}
             onChangeRole={handleRoleChange}
             onLogout={handleLogout}
+            onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           />
 
-          <main className="flex-1 p-6 lg:p-8 max-w-7xl w-full mx-auto">
+          <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 lg:pb-8">
             {/* ADMIN BRANCH */}
             {currentTab === 'admin-dashboard' && (
               <LiveDashboard
@@ -359,6 +405,33 @@ export default function App() {
           </main>
         </div>
       </div>
+
+      {/* Mobile Sticky Bottom Navigation Bar */}
+      <nav
+        className="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200/90 z-30 px-2 py-1.5 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+        aria-label="Mobile Bottom Navigation"
+      >
+        {getMobileBottomNav().map((item) => {
+          const Icon = item.icon;
+          const isActive = currentTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setCurrentTab(item.id)}
+              className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
+                isActive
+                  ? 'text-indigo-600 font-bold scale-105'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <div className={`p-1 rounded-lg ${isActive ? 'bg-indigo-50' : ''}`}>
+                <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.8]'}`} />
+              </div>
+              <span className="text-[10px] tracking-tight mt-0.5">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
 
       <AddVaccineModal
         isOpen={isAddModalOpen}
