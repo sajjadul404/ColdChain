@@ -324,8 +324,8 @@ export const LoginView = ({ onLoginSuccess }) => {
           </div>
 
           <div className="pt-6 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-            <span>© 2025 ColdChain Health Systems</span>
-            <span className="font-mono">Role-Based Access Control (RBAC)</span>
+            <span>© 2026 ColdChain Health Systems</span>
+            <span className="font-mono">Team: Do Something</span>
           </div>
         </div>
       </div>
