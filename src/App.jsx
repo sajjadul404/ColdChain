@@ -9,7 +9,6 @@ import { TamperEvidentLogsView } from './components/TamperEvidentLogsView.jsx';
 import { SettingsView } from './components/SettingsView.jsx';
 import { LoginView } from './components/LoginView.jsx';
 import { UserManagementView } from './components/UserManagementView.jsx';
-import { FridgeManagementView } from './components/FridgeManagementView.jsx';
 import { BatchManagementView } from './components/BatchManagementView.jsx';
 import { TransfersView } from './components/TransfersView.jsx';
 import { TemperatureView } from './components/TemperatureView.jsx';
@@ -165,21 +164,6 @@ export default function App() {
     );
   };
 
-  const handleAddFridge = async (fridge) => {
-    const newFridge = {
-      ...fridge,
-      id: `fridge-${Date.now()}`,
-    };
-    setFridges((prev) => [...prev, newFridge]);
-    await appendAuditLog('Commission Refrigerator', `Registered unit ${newFridge.name} with capacity ${newFridge.capacity}`);
-  };
-
-  const handleUpdateFridgeTemp = (fridgeId, temp) => {
-    setFridges((prev) =>
-      prev.map((f) => (f.id === fridgeId ? { ...f, temperature: temp } : f))
-    );
-  };
-
   const handleGenerateReport = async (report) => {
     const newRep = {
       ...report,
@@ -270,13 +254,6 @@ export default function App() {
               />
             )}
 
-            {currentTab === 'fridge-mgmt' && (
-              <FridgeManagementView
-                fridges={fridges}
-                onAddFridge={handleAddFridge}
-                onUpdateFridgeTemp={handleUpdateFridgeTemp}
-              />
-            )}
 
             {currentTab === 'system-logs' && (
               <TamperEvidentLogsView
