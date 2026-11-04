@@ -156,7 +156,7 @@ It provides administrators, pharmacists, and inspectors with a structured enviro
 ---
 
 <p align="center">
-  <b>ColdChain — Smart Monitoring. Secure Storage. Safer Vaccines.</b>
+  <b>ColdChain — Smart Monitoring | Secure Storage | Safer Vaccines.</b>
 </p>
 
 <p align="center">
