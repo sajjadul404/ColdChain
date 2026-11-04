@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Status-In%20Development-orange?style=for-the-badge"/>
 </p>
 
----
+---##mithun Modak 
 
 ## 📌 About The Project
 
@@ -136,7 +136,7 @@ It provides administrators, pharmacists, and inspectors with a structured enviro
 | Web Application | Project-specific frontend & backend technologies |
 | AI Module | Temperature Prediction & Performance Analysis |
 
-## 🎯 Project Objectives
+## Project Objectives
 
 - Maintain safe storage conditions for temperature-sensitive products.
 - Improve vaccine storage visibility and monitoring.
