@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentRole, setCurrentRole] = useState('admin');
   const [currentUser, setCurrentUser] = useState({
     name: 'Dr. Sarah Connor',
