@@ -159,6 +159,7 @@ It provides administrators, pharmacists, and inspectors with a structured enviro
   <b>ColdChain — Smart Monitoring | Secure Storage | Safer Vaccines.</b>
 </p>
 
+
 <p align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=0:00C853,100:00BCD4&height=100&section=footer" width="100%"/>
 </p>
