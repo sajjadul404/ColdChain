@@ -123,6 +123,7 @@ export const LoginView = ({ onLoginSuccess }) => {
               </div>
             </div>
           </div>
+          
 
           <div className="mt-4 text-center z-10">
             <span className="text-xs font-semibold text-slate-700 tracking-wide uppercase">

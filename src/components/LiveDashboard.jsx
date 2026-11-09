@@ -371,9 +371,9 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
   return (
     <div className="space-y-6">
       {/* Top Banner / Dashboard Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Live Dashboard</h2>
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Live Dashboard</h2>
           <div className="flex items-center gap-2 mt-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="text-xs font-semibold text-slate-500">Real-time Monitoring</span>
@@ -381,7 +381,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
         </div>
 
         {/* Right Fridge Selector */}
-        <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-medium">
+        <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-medium overflow-x-auto max-w-full">
           {fridges.map((fridge) => (
             <button
               key={fridge.id}
@@ -402,9 +402,9 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
       </div>
 
       {/* 4 Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Card 1: Temperature */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex items-center gap-4 hover:border-sky-300 transition-all relative overflow-hidden group">
+        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex items-center gap-3.5 sm:gap-4 hover:border-sky-300 transition-all relative overflow-hidden group">
           <div className="w-13 h-13 rounded-2xl bg-sky-50 flex items-center justify-center text-sky-600 shrink-0 group-hover:scale-105 transition-transform">
             <Thermometer className="w-7 h-7" />
           </div>
@@ -518,9 +518,9 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
       </div>
 
       {/* Middle Section: Heat Budget & Temperature Trend Graph with 1°C Grid Steps */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
         {/* Heat Budget Card */}
-        <div className="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2 text-slate-800 font-bold text-base flex-wrap">
@@ -550,8 +550,8 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
               </div>
             </div>
 
-            <div className="flex items-center justify-around gap-4 py-2">
-              <div className="relative w-36 h-36 flex items-center justify-center">
+            <div className="flex flex-col sm:flex-row items-center justify-around gap-4 py-2">
+              <div className="relative w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center shrink-0">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                   <circle
                     cx="50"
@@ -634,7 +634,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
         </div>
 
         {/* Temperature Trend Card - 1°C Grid Increments with visible up-and-down waves! */}
-        <div className="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="flex items-center gap-2">
@@ -890,10 +890,10 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
       </div>
 
       {/* Real-time Inbound Sensor Packet Ticker */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-3 border-b border-slate-100 mb-3">
           <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-indigo-600" />
+            <Activity className="w-4 h-4 text-indigo-600 shrink-0" />
             <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               Real-time Hardware Telemetry Ingest Feed (MQTT / TLS 1.3)
             </h4>
@@ -904,7 +904,7 @@ export const LiveDashboard = ({ fridges, temperatureTrend: initialTrend }) => {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {recentPackets.map((pkt, idx) => (
             <div
               key={pkt.id}
